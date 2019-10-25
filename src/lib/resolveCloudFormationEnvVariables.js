@@ -86,8 +86,26 @@ function resolveCloudFormationenvVars(serverless, envVars) {
 					return BbPromise.map(parts, v => mapValue(v))
 					.then(resolvedParts => _.join(resolvedParts, delimiter));
 				}
+				else if (value["Fn::GetAtt"]) {
+					/*
+						Works only if there's an env inside serverless.
+						Env attribute name must be the name of the instance you want to getAtt plus the attribute to return divided by a _
+						The value of such attribute must be the output name of the resource at CF.
+						e.g: DatabasePrimary.Endpoint.Address: rds-endpoint-${self:provider.stage}
+					*/
+					serverless.cli.log(value["Fn::GetAtt"]);
+					const importValueKey = value["Fn::GetAtt"].join('_').replace('.', '_');
+					serverless.cli.log(importValueKey);
+					const importKey = envVars[importValueKey];
+					delete envVars[importValueKey];
+					const resource = _.find(exports, [ "Name", importKey ]);
+					const resolved = resource && _.get(resource, "Value", null);
+					if (_.isNil(resolved)) {
+						serverless.cli.log(`WARNING: Failed to resolve import value ${importKey}`);
+					}
+					return BbPromise.resolve(resolved);
+				}
 			}
-
 			return BbPromise.resolve(value);
 		}
 
