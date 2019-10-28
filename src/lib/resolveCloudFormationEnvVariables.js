@@ -93,9 +93,7 @@ function resolveCloudFormationenvVars(serverless, envVars) {
 						The value of such attribute must be the output name of the resource at CF.
 						e.g: DatabasePrimary.Endpoint.Address: rds-endpoint-${self:provider.stage}
 					*/
-					serverless.cli.log(value["Fn::GetAtt"]);
 					const importValueKey = value["Fn::GetAtt"].join('_').replace('.', '_');
-					serverless.cli.log(importValueKey);
 					const importKey = envVars[importValueKey];
 					delete envVars[importValueKey];
 					const resource = _.find(exports, [ "Name", importKey ]);
